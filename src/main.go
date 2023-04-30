@@ -82,7 +82,10 @@ func main() {
 	myWindow := myApp.NewWindow("EC2 Instances")
 
 	// Create content container
-	description := widget.NewLabel("EC2 Instances in profile: " + settings.GetActiveProfile())
+	description := widget.NewLabel("No profile selected")
+	if settings.GetActiveProfile() != "" {
+		description = widget.NewLabel("EC2 Instances in profile: " + settings.GetActiveProfile())
+	}
 	content := container.NewVBox(description)
 	rows := createInstanceList(content, instances, settings.GetActiveProfile())
 	for _, row := range rows {
@@ -91,20 +94,23 @@ func main() {
 
 	settingsScreen := createSettingsScreen(myApp, settings)
 	tabs := container.NewAppTabs(
-		container.NewTabItem(instanceTabName, content),
 		container.NewTabItem(settingsTabName, settingsScreen),
+		container.NewTabItem(instanceTabName, content),
 	)
-	tabs.SetTabLocation(container.TabLocationLeading)
+	tabs.SetTabLocation(container.TabLocationTop)
+	tabs.SelectIndex(0)
 
 	tabs.OnSelected = func(item *container.TabItem) {
 		if item.Text == instanceTabName {
-			updateInstanceStatus(content, settings.GetActiveProfile())
+			if settings.GetActiveProfile() != "" {
+				updateInstanceStatus(content, settings.GetActiveProfile())
+			}
 		}
 	}
 
 	myWindow.SetContent(content)
 	myWindow.SetContent(tabs)
-	myWindow.Resize(fyne.NewSize(800, 600))
+	myWindow.Resize(fyne.NewSize(1200, 600))
 
 	ticker := time.NewTicker(20 * time.Second)
 	go func() {
@@ -133,10 +139,11 @@ func createSettingsScreen(app fyne.App, settings *Settings) fyne.CanvasObject {
 		settingsForm.Append(fmt.Sprintf("Profile %d", i+1), entry)
 	}
 
+	profile := &widget.Form{}
 	profileRadio := widget.NewRadioGroup(settings.Profiles, func(value string) {
 		settings.SetActiveProfile(value)
 	})
-	settingsForm.Append("Active Profile", profileRadio)
+	profile.Append("Active Profile", profileRadio)
 
 	saveButton := widget.NewButton("Save", func() {
 		newProfiles := []string{}
@@ -159,6 +166,6 @@ func createSettingsScreen(app fyne.App, settings *Settings) fyne.CanvasObject {
 	})
 
 	description := widget.NewLabel("Enter AWS profile names.")
-	settingsContent := container.NewVBox(description, settingsForm, saveButton)
+	settingsContent := container.NewVBox(description, settingsForm, saveButton, profile)
 	return settingsContent
 }
