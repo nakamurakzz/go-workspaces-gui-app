@@ -1,4 +1,7 @@
 # go-workspaces-gui-app
+Amazon WorkSpacesの一覧を表示して再起動/起動/停止を行うGUIアプリケーション
+  - ついでにEC2インスタンスの一覧も表示して再起動/起動/停止も行うことができる
+  - 現状、EC2インスタンスの一覧表示と操作しかできない
 
 ## フレームワーク
 https://developer.fyne.io/
