@@ -10,12 +10,16 @@ import (
 
 const region = "ap-northeast-1"
 
-func getEC2Instances() ([]*ec2.Instance, error) {
+func getEC2Instances(profile string) ([]*ec2.Instance, error) {
 	log.Println("getEC2Instances")
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(region)},
-	)
+	log.Println("profile:", profile)
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Config:            aws.Config{Region: aws.String(region)},
+		Profile:           profile,
+		SharedConfigState: session.SharedConfigEnable,
+	})
 	if err != nil {
+		log.Println("Error creating session:", err)
 		return nil, err
 	}
 
@@ -25,6 +29,7 @@ func getEC2Instances() ([]*ec2.Instance, error) {
 
 	result, err := svc.DescribeInstances(input)
 	if err != nil {
+		log.Println("Error describing instances:", err)
 		return nil, err
 	}
 
@@ -34,13 +39,15 @@ func getEC2Instances() ([]*ec2.Instance, error) {
 			instances = append(instances, instance)
 		}
 	}
-
 	return instances, nil
 }
 
-func rebootInstance(instanceID string) {
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(region),
+func rebootInstance(instanceID string, profile string) {
+	log.Println("rebootInstance")
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Config:            aws.Config{Region: aws.String(region)},
+		Profile:           profile,
+		SharedConfigState: session.SharedConfigEnable,
 	})
 	if err != nil {
 		log.Println("Error creating session:", err)
@@ -63,9 +70,12 @@ func rebootInstance(instanceID string) {
 	log.Println("Instance rebooted:", instanceID)
 }
 
-func stopInstance(instanceID string) {
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(region),
+func stopInstance(instanceID string, profile string) {
+	log.Println("stopInstance")
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Config:            aws.Config{Region: aws.String(region)},
+		Profile:           profile,
+		SharedConfigState: session.SharedConfigEnable,
 	})
 	if err != nil {
 		log.Println("Error creating session:", err)
@@ -88,9 +98,12 @@ func stopInstance(instanceID string) {
 	log.Println("Instance stopped:", instanceID)
 }
 
-func startInstance(instanceID string) {
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(region),
+func startInstance(instanceID string, profile string) {
+	log.Println("startInstance")
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Config:            aws.Config{Region: aws.String(region)},
+		Profile:           profile,
+		SharedConfigState: session.SharedConfigEnable,
 	})
 	if err != nil {
 		log.Println("Error creating session:", err)
