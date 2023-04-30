@@ -106,7 +106,7 @@ func main() {
 	myWindow.SetContent(tabs)
 	myWindow.Resize(fyne.NewSize(800, 600))
 
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(20 * time.Second)
 	go func() {
 		for range ticker.C {
 			updateInstanceStatus(content, settings.GetActiveProfile())

@@ -25,8 +25,8 @@ func createInstanceList(content *fyne.Container, instances []*ec2.Instance, prof
 		instanceID := *instance.InstanceId
 		status := *instance.State.Name
 		ip := ""
-		if instance.PrivateIpAddress != nil {
-			ip = *instance.PrivateIpAddress
+		if instance.PublicIpAddress != nil {
+			ip = *instance.PublicIpAddress
 		}
 		name := getInstanceName(instance.Tags)
 
@@ -47,6 +47,17 @@ func createInstanceList(content *fyne.Container, instances []*ec2.Instance, prof
 			updateInstanceStatus(content, profile)
 		})
 
+		if *instance.State.Name == "running" {
+			startButton.Disable()
+		} else if *instance.State.Name == "stopped" {
+			stopButton.Disable()
+			rebootButton.Disable()
+		}
+		if *instance.State.Name == "pending" || *instance.State.Name == "stopping" || *instance.State.Name == "shutting-down" || *instance.State.Name == "terminated" {
+			rebootButton.Disable()
+			startButton.Disable()
+			stopButton.Disable()
+		}
 		row := container.NewGridWithColumns(7, nameLabel, instanceLabel, ipLabel, statusLabel, rebootButton, startButton, stopButton)
 		rows = append(rows, row)
 	}
