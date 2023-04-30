@@ -1,13 +1,28 @@
 package main
 
 import (
+	"log"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
-func createInstanceList(content *fyne.Container, instances []*ec2.Instance, profile string) []*fyne.Container {
+func createEC2ListView(instances []*Instance, profile string) *fyne.Container {
+	description := widget.NewLabel("No profile selected")
+	if profile != "" {
+		description = widget.NewLabel("EC2 Instances in profile: " + profile)
+	}
+	content := container.NewVBox(description)
+	rows := createInstanceList(content, instances, profile)
+	for _, row := range rows {
+		content.Add(row)
+	}
+
+	return content
+}
+
+func createInstanceList(content *fyne.Container, instances []*Instance, profile string) []*fyne.Container {
 	// Create header
 	header := container.NewGridWithColumns(7,
 		widget.NewLabel("Name"),
@@ -22,13 +37,10 @@ func createInstanceList(content *fyne.Container, instances []*ec2.Instance, prof
 	// Create rows
 	rows := []*fyne.Container{header}
 	for _, instance := range instances {
-		instanceID := *instance.InstanceId
-		status := *instance.State.Name
-		ip := ""
-		if instance.PublicIpAddress != nil {
-			ip = *instance.PublicIpAddress
-		}
-		name := getInstanceName(instance.Tags)
+		instanceID := instance.InstanceId
+		status := instance.State
+		ip := instance.PublicIpAddress
+		name := instance.InstanceName
 
 		nameLabel := widget.NewLabel(name)
 		instanceLabel := widget.NewLabel(instanceID)
@@ -47,13 +59,13 @@ func createInstanceList(content *fyne.Container, instances []*ec2.Instance, prof
 			updateInstanceStatus(content, profile)
 		})
 
-		if *instance.State.Name == "running" {
+		if status == "running" {
 			startButton.Disable()
-		} else if *instance.State.Name == "stopped" {
+		} else if status == "stopped" {
 			stopButton.Disable()
 			rebootButton.Disable()
 		}
-		if *instance.State.Name == "pending" || *instance.State.Name == "stopping" || *instance.State.Name == "shutting-down" || *instance.State.Name == "terminated" {
+		if status == "pending" || status == "stopping" || status == "shutting-down" || status == "terminated" {
 			rebootButton.Disable()
 			startButton.Disable()
 			stopButton.Disable()
@@ -62,4 +74,26 @@ func createInstanceList(content *fyne.Container, instances []*ec2.Instance, prof
 		rows = append(rows, row)
 	}
 	return rows
+}
+
+func updateInstanceStatus(content *fyne.Container, profile string) error {
+	log.Println("updateInstanceStatus")
+	instances, err := getEC2Instances(profile)
+	if err != nil {
+		log.Println("Error:", err)
+		return err
+	}
+
+	if profile != "" {
+		// Create new rows based on the new instances
+		newRows := createInstanceList(content, instances, profile)
+		// Update content container
+		content.Objects = nil
+		for _, row := range newRows {
+			content.Add(row)
+		}
+	}
+	content.Refresh()
+
+	return nil
 }

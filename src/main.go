@@ -9,11 +9,11 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 const instanceTabName = "Instances  "
 const settingsTabName = "Settings  "
+const workspacesTabName = "Workspaces  "
 
 func createStatusLabel(status string) *widget.Label {
 	// var textColor color.Color
@@ -28,37 +28,6 @@ func createStatusLabel(status string) *widget.Label {
 	return widget.NewLabelWithStyle(status, fyne.TextAlignLeading, fyne.TextStyle{})
 }
 
-func updateInstanceStatus(content *fyne.Container, profile string) error {
-	log.Println("updateInstanceStatus")
-	instances, err := getEC2Instances(profile)
-	if err != nil {
-		log.Println("Error:", err)
-		return err
-	}
-
-	if profile != "" {
-		// Create new rows based on the new instances
-		newRows := createInstanceList(content, instances, profile)
-		// Update content container
-		content.Objects = nil
-		for _, row := range newRows {
-			content.Add(row)
-		}
-	}
-	content.Refresh()
-
-	return nil
-}
-
-func getInstanceName(tags []*ec2.Tag) string {
-	for _, tag := range tags {
-		if *tag.Key == "Name" {
-			return *tag.Value
-		}
-	}
-	return ""
-}
-
 func main() {
 	settings, err := LoadSettings()
 	if err != nil {
@@ -66,12 +35,18 @@ func main() {
 		return
 	}
 
-	instances := []*ec2.Instance{}
-
+	instances := []*Instance{}
+	workspaces := []*Workspace{}
 	if settings.GetActiveProfile() == "" {
-		instances = []*ec2.Instance{}
+		instances = []*Instance{}
+		workspaces = []*Workspace{}
 	} else {
 		instances, err = getEC2Instances(settings.GetActiveProfile())
+		if err != nil {
+			log.Println("Error:", err)
+			return
+		}
+		workspaces, err = getWorkspaces(settings.GetActiveProfile())
 		if err != nil {
 			log.Println("Error:", err)
 			return
@@ -81,21 +56,13 @@ func main() {
 	myApp := app.New()
 	myWindow := myApp.NewWindow("EC2 Instances")
 
-	// Create content container
-	description := widget.NewLabel("No profile selected")
-	if settings.GetActiveProfile() != "" {
-		description = widget.NewLabel("EC2 Instances in profile: " + settings.GetActiveProfile())
-	}
-	content := container.NewVBox(description)
-	rows := createInstanceList(content, instances, settings.GetActiveProfile())
-	for _, row := range rows {
-		content.Add(row)
-	}
-
+	ec2ListScreen := createEC2ListView(instances, settings.GetActiveProfile())
+	workspaceListScreen := createWorkSpacesListView(workspaces, settings.GetActiveProfile())
 	settingsScreen := createSettingsScreen(myApp, settings)
 	tabs := container.NewAppTabs(
 		container.NewTabItem(settingsTabName, settingsScreen),
-		container.NewTabItem(instanceTabName, content),
+		container.NewTabItem(instanceTabName, ec2ListScreen),
+		container.NewTabItem(workspacesTabName, workspaceListScreen),
 	)
 	tabs.SetTabLocation(container.TabLocationTop)
 	tabs.SelectIndex(0)
@@ -103,12 +70,17 @@ func main() {
 	tabs.OnSelected = func(item *container.TabItem) {
 		if item.Text == instanceTabName {
 			if settings.GetActiveProfile() != "" {
-				updateInstanceStatus(content, settings.GetActiveProfile())
+				updateInstanceStatus(ec2ListScreen, settings.GetActiveProfile())
+			}
+		}
+		if item.Text == workspacesTabName {
+			if settings.GetActiveProfile() != "" {
+				updateWorkspacesStatus(workspaceListScreen, settings.GetActiveProfile())
 			}
 		}
 	}
 
-	myWindow.SetContent(content)
+	myWindow.SetContent(ec2ListScreen)
 	myWindow.SetContent(tabs)
 	myWindow.Resize(fyne.NewSize(1200, 600))
 
@@ -116,7 +88,8 @@ func main() {
 	go func() {
 		for range ticker.C {
 			if settings.GetActiveProfile() != "" {
-				updateInstanceStatus(content, settings.GetActiveProfile())
+				updateInstanceStatus(ec2ListScreen, settings.GetActiveProfile())
+				updateWorkspacesStatus(workspaceListScreen, settings.GetActiveProfile())
 			}
 		}
 	}()

@@ -10,7 +10,14 @@ import (
 
 const region = "ap-northeast-1"
 
-func getEC2Instances(profile string) ([]*ec2.Instance, error) {
+type Instance struct {
+	InstanceId      string
+	InstanceName    string
+	State           string
+	PublicIpAddress string
+}
+
+func getEC2Instances(profile string) ([]*Instance, error) {
 	log.Println("getEC2Instances")
 	log.Println("profile:", profile)
 	sess, err := session.NewSessionWithOptions(session.Options{
@@ -33,13 +40,34 @@ func getEC2Instances(profile string) ([]*ec2.Instance, error) {
 		return nil, err
 	}
 
-	instances := []*ec2.Instance{}
+	instances := []*Instance{}
 	for _, reservation := range result.Reservations {
 		for _, instance := range reservation.Instances {
-			instances = append(instances, instance)
+			instance := Instance{
+				InstanceId:   *instance.InstanceId,
+				InstanceName: getInstanceName(instance.Tags),
+				State:        *instance.State.Name,
+				PublicIpAddress: func() string {
+					if instance.PublicIpAddress != nil {
+						return *instance.PublicIpAddress
+					} else {
+						return ""
+					}
+				}(),
+			}
+			instances = append(instances, &instance)
 		}
 	}
 	return instances, nil
+}
+
+func getInstanceName(tags []*ec2.Tag) string {
+	for _, tag := range tags {
+		if *tag.Key == "Name" {
+			return *tag.Value
+		}
+	}
+	return ""
 }
 
 func rebootInstance(instanceID string, profile string) {
