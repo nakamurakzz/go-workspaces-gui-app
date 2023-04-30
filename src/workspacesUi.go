@@ -43,7 +43,7 @@ func createWorkspacesList(content *fyne.Container, workspaces []*Workspace, prof
 		userNameLabel := widget.NewLabel(userName)
 		rebootButton := widget.NewButton("Reboot", func() {
 			rebootWorkspce(workspaceID, profile)
-			updateWorkspacesStatus(content, profile)
+			updateWorkspacesStatus(content, profile, true)
 		})
 
 		if status == "stopped" {
@@ -58,7 +58,11 @@ func createWorkspacesList(content *fyne.Container, workspaces []*Workspace, prof
 	return rows
 }
 
-func updateWorkspacesStatus(content *fyne.Container, profile string) error {
+func updateWorkspacesStatus(content *fyne.Container, profile string, isActive bool) error {
+	if !isActive {
+		content.Refresh()
+		return nil
+	}
 	log.Println("Updating workspaces status")
 	workspaces, err := getWorkspaces(profile)
 	if err != nil {

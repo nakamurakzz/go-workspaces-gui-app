@@ -7,7 +7,13 @@ import (
 
 type Settings struct {
 	activeProfile string
+	activeFeature activeFeature
 	Profiles      []string
+}
+
+type activeFeature struct {
+	EC2       bool
+	WorkSpace bool
 }
 
 func NewSrttings() *Settings {
@@ -61,4 +67,16 @@ func (s *Settings) SetActiveProfile(profile string) {
 
 func (s *Settings) GetActiveProfile() string {
 	return s.activeProfile
+}
+
+func (s *Settings) changeEC2ListScreenVisible() {
+	s.activeFeature.EC2 = !s.activeFeature.EC2
+}
+
+func (s *Settings) changeWorkSpaceListScreenVisible() {
+	s.activeFeature.WorkSpace = !s.activeFeature.WorkSpace
+}
+
+func (s *Settings) GetActiveFeature() activeFeature {
+	return s.activeFeature
 }

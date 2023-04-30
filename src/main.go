@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -68,14 +67,15 @@ func main() {
 	tabs.SelectIndex(0)
 
 	tabs.OnSelected = func(item *container.TabItem) {
+		activeFeature := settings.GetActiveFeature()
 		if item.Text == instanceTabName {
 			if settings.GetActiveProfile() != "" {
-				updateInstanceStatus(ec2ListScreen, settings.GetActiveProfile())
+				updateInstanceStatus(ec2ListScreen, settings.GetActiveProfile(), activeFeature.EC2)
 			}
 		}
 		if item.Text == workspacesTabName {
 			if settings.GetActiveProfile() != "" {
-				updateWorkspacesStatus(workspaceListScreen, settings.GetActiveProfile())
+				updateWorkspacesStatus(workspaceListScreen, settings.GetActiveProfile(), activeFeature.WorkSpace)
 			}
 		}
 	}
@@ -85,60 +85,15 @@ func main() {
 	myWindow.Resize(fyne.NewSize(1200, 600))
 
 	ticker := time.NewTicker(20 * time.Second)
-	go func() {
+	go func(settings *Settings) {
 		for range ticker.C {
 			if settings.GetActiveProfile() != "" {
-				updateInstanceStatus(ec2ListScreen, settings.GetActiveProfile())
-				updateWorkspacesStatus(workspaceListScreen, settings.GetActiveProfile())
+				activeFeature := settings.GetActiveFeature()
+				updateInstanceStatus(ec2ListScreen, settings.GetActiveProfile(), activeFeature.EC2)
+				updateWorkspacesStatus(workspaceListScreen, settings.GetActiveProfile(), activeFeature.WorkSpace)
 			}
 		}
-	}()
+	}(settings)
 
 	myWindow.ShowAndRun()
-}
-
-func createSettingsScreen(app fyne.App, settings *Settings) fyne.CanvasObject {
-	profileEntries := []*widget.Entry{}
-	settingsForm := &widget.Form{}
-
-	for i := 0; i < 5; i++ {
-		entry := widget.NewEntry()
-
-		if i < len(settings.Profiles) {
-			entry.SetText(settings.Profiles[i])
-		}
-
-		profileEntries = append(profileEntries, entry)
-		settingsForm.Append(fmt.Sprintf("Profile %d", i+1), entry)
-	}
-
-	profile := &widget.Form{}
-	profileRadio := widget.NewRadioGroup(settings.Profiles, func(value string) {
-		settings.SetActiveProfile(value)
-	})
-	profile.Append("Active Profile", profileRadio)
-
-	saveButton := widget.NewButton("Save", func() {
-		newProfiles := []string{}
-
-		for _, entry := range profileEntries {
-			profileName := entry.Text
-
-			if profileName != "" {
-				newProfiles = append(newProfiles, profileName)
-			}
-		}
-
-		settings.Profiles = newProfiles
-		profileRadio.Options = newProfiles
-		profileRadio.Refresh()
-
-		if err := settings.Save(); err != nil {
-			log.Println("Error saving settings:", err)
-		}
-	})
-
-	description := widget.NewLabel("Enter AWS profile names.")
-	settingsContent := container.NewVBox(description, settingsForm, saveButton, profile)
-	return settingsContent
 }

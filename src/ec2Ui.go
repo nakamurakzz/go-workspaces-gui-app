@@ -48,15 +48,15 @@ func createInstanceList(content *fyne.Container, instances []*Instance, profile 
 		statusLabel := widget.NewLabel(status)
 		rebootButton := widget.NewButton("Reboot", func() {
 			rebootInstance(instanceID, profile)
-			updateInstanceStatus(content, profile)
+			updateInstanceStatus(content, profile, true)
 		})
 		startButton := widget.NewButton("Start", func() {
 			startInstance(instanceID, profile)
-			updateInstanceStatus(content, profile)
+			updateInstanceStatus(content, profile, true)
 		})
 		stopButton := widget.NewButton("Stop", func() {
 			stopInstance(instanceID, profile)
-			updateInstanceStatus(content, profile)
+			updateInstanceStatus(content, profile, true)
 		})
 
 		if status == "running" {
@@ -76,7 +76,11 @@ func createInstanceList(content *fyne.Container, instances []*Instance, profile 
 	return rows
 }
 
-func updateInstanceStatus(content *fyne.Container, profile string) error {
+func updateInstanceStatus(content *fyne.Container, profile string, isActive bool) error {
+	if !isActive {
+		content.Refresh()
+		return nil
+	}
 	log.Println("updateInstanceStatus")
 	instances, err := getEC2Instances(profile)
 	if err != nil {
