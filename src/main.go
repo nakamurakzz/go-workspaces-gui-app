@@ -109,7 +109,9 @@ func main() {
 	ticker := time.NewTicker(20 * time.Second)
 	go func() {
 		for range ticker.C {
-			updateInstanceStatus(content, settings.GetActiveProfile())
+			if settings.GetActiveProfile() != "" {
+				updateInstanceStatus(content, settings.GetActiveProfile())
+			}
 		}
 	}()
 
