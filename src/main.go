@@ -9,8 +9,115 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
+
+const region = "ap-northeast-1"
+
+func getEC2Instances() ([]*ec2.Instance, error) {
+	log.Println("getEC2Instances")
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(region)},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	svc := ec2.New(sess)
+
+	input := &ec2.DescribeInstancesInput{}
+
+	result, err := svc.DescribeInstances(input)
+	if err != nil {
+		return nil, err
+	}
+
+	instances := []*ec2.Instance{}
+	for _, reservation := range result.Reservations {
+		for _, instance := range reservation.Instances {
+			instances = append(instances, instance)
+		}
+	}
+
+	return instances, nil
+}
+
+func rebootInstance(instanceID string) {
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(region),
+	})
+	if err != nil {
+		log.Println("Error creating session:", err)
+		return
+	}
+
+	svc := ec2.New(sess)
+	input := &ec2.RebootInstancesInput{
+		InstanceIds: []*string{
+			aws.String(instanceID),
+		},
+	}
+
+	_, err = svc.RebootInstances(input)
+	if err != nil {
+		log.Println("Error rebooting instance:", err)
+		return
+	}
+
+	log.Println("Instance rebooted:", instanceID)
+}
+
+func stopInstance(instanceID string) {
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(region),
+	})
+	if err != nil {
+		log.Println("Error creating session:", err)
+		return
+	}
+
+	svc := ec2.New(sess)
+	input := &ec2.StopInstancesInput{
+		InstanceIds: []*string{
+			aws.String(instanceID),
+		},
+	}
+
+	_, err = svc.StopInstances(input)
+	if err != nil {
+		log.Println("Error stoping instance:", err)
+		return
+	}
+
+	log.Println("Instance stopped:", instanceID)
+}
+
+func startInstance(instanceID string) {
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(region),
+	})
+	if err != nil {
+		log.Println("Error creating session:", err)
+		return
+	}
+
+	svc := ec2.New(sess)
+	input := &ec2.StartInstancesInput{
+		InstanceIds: []*string{
+			aws.String(instanceID),
+		},
+	}
+
+	_, err = svc.StartInstances(input)
+	if err != nil {
+		log.Println("Error starting instance:", err)
+		return
+	}
+
+	log.Println("Instance started:", instanceID)
+}
 
 func createStatusLabel(status string) *widget.Label {
 	// var textColor color.Color
@@ -68,15 +175,19 @@ func main() {
 	myApp := app.New()
 	myWindow := myApp.NewWindow("EC2 Instances")
 
-	header := container.NewHBox(
+	// Create header
+	header := container.NewGridWithColumns(7,
+		widget.NewLabel("Name"),
 		widget.NewLabel("Instance ID"),
+		widget.NewLabel("IP Address"),
 		widget.NewLabel("Status"),
 		widget.NewLabel("Reboot"),
-		widget.NewLabel("IP Address"),
-		widget.NewLabel("Name"),
+		widget.NewLabel("Start"),
+		widget.NewLabel("Stop"),
 	)
-	rows := []*fyne.Container{header}
 
+	// Create rows
+	rows := []*fyne.Container{header}
 	for _, instance := range instances {
 		instanceID := *instance.InstanceId
 		status := *instance.State.Name
@@ -86,10 +197,10 @@ func main() {
 		}
 		name := getInstanceName(instance.Tags)
 
-		instanceLabel := widget.NewLabel(instanceID)
-		statusLabel := widget.NewLabel(status)
-		ipLabel := widget.NewLabel(ip)
 		nameLabel := widget.NewLabel(name)
+		instanceLabel := widget.NewLabel(instanceID)
+		ipLabel := widget.NewLabel(ip)
+		statusLabel := widget.NewLabel(status)
 		rebootButton := widget.NewButton("Reboot", func() {
 			rebootInstance(instanceID)
 			updateInstanceStatus(rows)
@@ -103,10 +214,11 @@ func main() {
 			updateInstanceStatus(rows)
 		})
 
-		row := container.NewHBox(nameLabel, instanceLabel, ipLabel, statusLabel, rebootButton, startButton, stopButton)
+		row := container.NewGridWithColumns(7, nameLabel, instanceLabel, ipLabel, statusLabel, rebootButton, startButton, stopButton)
 		rows = append(rows, row)
 	}
 
+	// Create content container
 	content := container.NewVBox()
 	for _, row := range rows {
 		content.Add(row)
