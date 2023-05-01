@@ -15,8 +15,7 @@ type Workspace struct {
 }
 
 func getWorkspaces(profile string) ([]*Workspace, error) {
-	log.Println("getWorkspaces")
-	log.Println("profile:", profile)
+	log.Println("getWorkspaces profile:", profile)
 	sess, err := session.NewSessionWithOptions(session.Options{
 		Config:            aws.Config{Region: aws.String(region)},
 		Profile:           profile,

@@ -18,8 +18,7 @@ type Instance struct {
 }
 
 func getEC2Instances(profile string) ([]*Instance, error) {
-	log.Println("getEC2Instances")
-	log.Println("profile:", profile)
+	log.Println("getEC2Instances profile:", profile)
 	sess, err := session.NewSessionWithOptions(session.Options{
 		Config:            aws.Config{Region: aws.String(region)},
 		Profile:           profile,
