@@ -9,7 +9,7 @@ import (
 	"fyne.io/fyne/v2/container"
 )
 
-const instanceTabName = "Instances  "
+const instanceTabName = "EC2 Instances  "
 const settingsTabName = "Settings  "
 const workspacesTabName = "Workspaces  "
 const updateInterval = 20 * time.Second
