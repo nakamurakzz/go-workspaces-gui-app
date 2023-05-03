@@ -45,12 +45,12 @@ func main() {
 		activeProfile := settings.GetActiveProfile()
 		if item.Text == instanceTabName {
 			if settings.GetActiveProfile() != "" {
-				updateInstanceStatus(ec2ListScreen, activeProfile, activeFeature.EC2)
+				go updateInstanceStatus(ec2ListScreen, activeProfile, activeFeature.EC2)
 			}
 		}
 		if item.Text == workspacesTabName {
 			if settings.GetActiveProfile() != "" {
-				updateWorkspacesStatus(workspaceListScreen, activeProfile, activeFeature.WorkSpace)
+				go updateWorkspacesStatus(workspaceListScreen, activeProfile, activeFeature.WorkSpace)
 			}
 		}
 	}
