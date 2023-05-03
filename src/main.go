@@ -9,10 +9,12 @@ import (
 	"fyne.io/fyne/v2/container"
 )
 
-const instanceTabName = "EC2 Instances  "
-const settingsTabName = "Settings  "
-const workspacesTabName = "Workspaces  "
-const updateInterval = 20 * time.Second
+const (
+	instanceTabName   = "EC2 Instances  "
+	settingsTabName   = "Settings  "
+	workspacesTabName = "Workspaces  "
+	updateInterval    = 20 * time.Second
+)
 
 func main() {
 	settings, err := LoadSettings()
@@ -23,19 +25,17 @@ func main() {
 
 	instances := []*Instance{}
 	workspaces := []*Workspace{}
-	instances = []*Instance{}
-	workspaces = []*Workspace{}
 
 	myApp := app.New()
-	myWindow := myApp.NewWindow("EC2 Instances")
 
-	ec2ListScreen := createEC2ListView(instances, "")
-	workspaceListScreen := createWorkSpacesListView(workspaces, "")
+	ec2List := createEC2ListView(instances, "")
+	workspaceList := createWorkSpacesListView(workspaces, "")
 	settingsScreen := createSettingsScreen(myApp, settings)
+
 	tabs := container.NewAppTabs(
 		container.NewTabItem(settingsTabName, settingsScreen),
-		container.NewTabItem(instanceTabName, ec2ListScreen),
-		container.NewTabItem(workspacesTabName, workspaceListScreen),
+		container.NewTabItem(instanceTabName, ec2List),
+		container.NewTabItem(workspacesTabName, workspaceList),
 	)
 	tabs.SetTabLocation(container.TabLocationTop)
 	tabs.SelectIndex(0)
@@ -43,25 +43,22 @@ func main() {
 	tabs.OnSelected = func(item *container.TabItem) {
 		activeFeature := settings.GetActiveFeature()
 		activeProfile := settings.GetActiveProfile()
-		if item.Text == instanceTabName {
-			if settings.GetActiveProfile() != "" {
-				go updateInstanceStatus(ec2ListScreen, activeProfile, activeFeature.EC2)
-			}
+		if item.Text == instanceTabName && activeProfile != "" {
+			go updateInstanceStatus(ec2List, activeProfile, activeFeature.EC2)
 		}
-		if item.Text == workspacesTabName {
-			if settings.GetActiveProfile() != "" {
-				go updateWorkspacesStatus(workspaceListScreen, activeProfile, activeFeature.WorkSpace)
-			}
+		if item.Text == workspacesTabName && activeProfile != "" {
+			go updateWorkspacesStatus(workspaceList, activeProfile, activeFeature.WorkSpace)
 		}
 	}
 
-	myWindow.SetContent(ec2ListScreen)
-	myWindow.SetContent(tabs)
-	myWindow.Resize(fyne.NewSize(1200, 600))
+	window := myApp.NewWindow("EC2 Instances")
+	window.Resize(fyne.NewSize(1200, 600))
+	window.SetContent(ec2List)
+	window.SetContent(tabs)
 
-	go updateScreen(settings, ec2ListScreen, workspaceListScreen)
+	go updateScreen(settings, ec2List, workspaceList)
 
-	myWindow.ShowAndRun()
+	window.ShowAndRun()
 }
 
 // 定期的にインスタンスの状態を更新する
