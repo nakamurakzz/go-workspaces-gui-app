@@ -35,7 +35,7 @@ func createInstanceList(content *fyne.Container, instances []*Instance, profile 
 	)
 
 	// Create rows
-	rows := []*fyne.Container{header}
+	listContainer := []*fyne.Container{header}
 	for _, instance := range instances {
 		instanceID := instance.InstanceId
 		status := instance.State
@@ -71,9 +71,9 @@ func createInstanceList(content *fyne.Container, instances []*Instance, profile 
 			stopButton.Disable()
 		}
 		row := container.NewGridWithColumns(7, nameLabel, instanceLabel, ipLabel, statusLabel, rebootButton, startButton, stopButton)
-		rows = append(rows, row)
+		listContainer = append(listContainer, row)
 	}
-	return rows
+	return listContainer
 }
 
 func updateInstanceStatus(content *fyne.Container, profile string, isActive bool) error {

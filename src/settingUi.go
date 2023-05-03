@@ -60,6 +60,6 @@ func createSettingsScreen(app fyne.App, settings *Settings) fyne.CanvasObject {
 
 	description := widget.NewLabel("Enter AWS profile names.")
 	featureSelectDescription := widget.NewLabel("Select Features to enable. When you enable a feature, it will start to fetch data from AWS.")
-	settingsContent := container.NewVBox(description, settingsForm, saveButton, profile, featureSelectDescription, ec2FeatureCheckbox, worksoaceFeatureCheckbox)
-	return settingsContent
+	settingsContainer := container.NewVBox(description, settingsForm, saveButton, profile, featureSelectDescription, ec2FeatureCheckbox, worksoaceFeatureCheckbox)
+	return settingsContainer
 }

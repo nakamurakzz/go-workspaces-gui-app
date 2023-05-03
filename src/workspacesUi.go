@@ -32,7 +32,7 @@ func createWorkspacesList(content *fyne.Container, workspaces []*Workspace, prof
 	)
 
 	// Create rows
-	rows := []*fyne.Container{header}
+	listContainer := []*fyne.Container{header}
 	for _, workspace := range workspaces {
 		workspaceID := workspace.WorkspaceId
 		userName := workspace.UserName
@@ -53,9 +53,9 @@ func createWorkspacesList(content *fyne.Container, workspaces []*Workspace, prof
 			rebootButton.Disable()
 		}
 		row := container.NewGridWithColumns(4, userNameLabel, workspaceLabel, statusLabel, rebootButton)
-		rows = append(rows, row)
+		listContainer = append(listContainer, row)
 	}
-	return rows
+	return listContainer
 }
 
 func updateWorkspacesStatus(content *fyne.Container, profile string, isActive bool) error {
